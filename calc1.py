@@ -140,7 +140,7 @@ def main():
             continue
         
         interpreter = Interpreter(input_expr)
-        result = interpreter.eval(input_expr)
+        result = interpreter.eval()
         
         print result
 
