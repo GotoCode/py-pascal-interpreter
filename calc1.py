@@ -13,6 +13,7 @@ Author: GotoCode
 
 INTEGER = 'INTEGER'
 PLUS    = 'PLUS'
+MINUS   = 'MINUS'
 EOF     = 'EOF'
 
 
@@ -39,6 +40,8 @@ class Interpreter(object):
     def __init__(self, text):
         # input expression
         self.text = text
+        # 'clean up' the input string
+        self.remove_whitespace()
         # pointer to current symbol
         self.pos  = 0
         # most recent token available for processing
@@ -66,7 +69,7 @@ class Interpreter(object):
         
         if symbol.isdigit():
             
-            # extract entire multi-digit number
+            # extract multi-digit integer
             num_str  = ''
             
             while self.pos < len(text) and text[self.pos].isdigit():
@@ -78,6 +81,8 @@ class Interpreter(object):
         elif symbol == '+':
             token = Token(PLUS, symbol)
             self.pos += 1
+        elif symbol == '-':
+            token = Token(MINUS, symbol)
         else:
             token = None
         
@@ -109,18 +114,38 @@ class Interpreter(object):
         first = self.curr_token.value
         self.consume(INTEGER)
         
-        # plus operator
+        # plus/minus operator
         op = self.curr_token
-        self.consume(PLUS)
+        
+        try:
+            self.consume(PLUS)
+        except:
+            self.consume(MINUS)
         
         # second int operand
         second = self.curr_token.value
         self.consume(INTEGER)
         
-        # since the pattern found is 'INTEGER PLUS INTEGER'
-        # we can simply return the value of this expression
-        out_val = first + second
+        # based on pattern return appropriate evaluation
+        if op.type == PLUS:
+            out_val = first + second
+        else:
+            out_val = first - second
         return out_val
+    
+    
+    def remove_whitespace(self):
+        '''
+        "cleans up" the input string by extracting
+        only those non-whitespace characters from it
+        '''
+        result_text = ''
+        
+        for i in range(len(self.text)):
+            if not self.text[i].isspace():
+                result_text += self.text[i]
+        
+        self.text = result_text
 
 
 def main():
