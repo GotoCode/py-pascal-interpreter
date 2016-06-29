@@ -83,6 +83,7 @@ class Interpreter(object):
             self.pos += 1
         elif symbol == '-':
             token = Token(MINUS, symbol)
+            self.pos += 1
         else:
             token = None
         
