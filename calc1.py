@@ -124,3 +124,26 @@ class Interpreter(object):
         return out_val
 
 
+def main():
+    '''
+    Main logic for presenting CLI to user of interpreter
+    '''
+    while True:
+
+        try:
+            input_expr = raw_input('calc> ')
+        except EOFError:
+            break
+        
+        # ignore any empty lines of input
+        if not text:
+            continue
+        
+        interpreter = Interpreter(input_expr)
+        result = interpreter.eval(input_expr)
+        
+        print result
+
+
+if __name__ == '__main__':
+    main()
