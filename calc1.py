@@ -47,21 +47,6 @@ class Interpreter(object):
     def error(self):
         raise Exception('Error parsing input...')
     
-    def extract_token(self, symbol):
-        '''
-        Given a symbol like 123 or +,
-        returns a token of the appropriate
-        type
-        
-        RETURN: Token object
-        '''
-        if symbol.isdigit():
-            return Token(INTEGER, int(symbol))
-        elif symbol == '+':
-            return Token(PLUS, symbol)
-        else:
-            return None
-    
     def get_next_token(self):
         '''
         Lexical analyzer which returns a stream of
@@ -75,12 +60,26 @@ class Interpreter(object):
         if self.pos >= len(text):
             return Token(EOF, None)
         
-        # convert current symbol to appropriate token
-        curr_symbol = text[self.pos]
+        # convert current (character) symbol to appropriate token
         
-        token = self.extract_token(curr_symbol)
+        symbol = text[self.pos]
         
-        self.pos += 1
+        if symbol.isdigit():
+            
+            # extract entire multi-digit number
+            num_str  = ''
+            
+            while self.pos < len(text) and text[self.pos].isdigit():
+                num_str  += text[self.pos]
+                self.pos += 1
+            
+            token = Token(INTEGER, int(num_str))
+            
+        elif symbol == '+':
+            token = Token(PLUS, symbol)
+            self.pos += 1
+        else:
+            token = None
         
         if not token:
             self.error()
