@@ -136,7 +136,7 @@ def main():
             break
         
         # ignore any empty lines of input
-        if not text:
+        if not input_expr:
             continue
         
         interpreter = Interpreter(input_expr)
