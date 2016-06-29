@@ -93,7 +93,7 @@ class Interpreter(object):
         current token, then consume it, else
         raise an error
         '''
-        if type == self.current_token.type:
+        if type == self.curr_token.type:
             self.curr_token = self.get_next_token()
         else:
             self.error()
@@ -102,20 +102,20 @@ class Interpreter(object):
         '''
         Evaluate the given input expression
         '''
-        self.current_token = self.get_next_token()
+        self.curr_token = self.get_next_token()
         
         # Check for pattern 'INTEGER PLUS INTEGER'
         
         # first int operand
-        first = self.current_token
+        first = self.curr_token.value
         self.consume(INTEGER)
         
         # plus operator
-        op = self.current_token
+        op = self.curr_token
         self.consume(PLUS)
         
         # second int operand
-        second = self.current_token
+        second = self.curr_token.value
         self.consume(INTEGER)
         
         # since the pattern found is 'INTEGER PLUS INTEGER'
@@ -133,6 +133,7 @@ def main():
         try:
             input_expr = raw_input('calc> ')
         except EOFError:
+            print
             break
         
         # ignore any empty lines of input
