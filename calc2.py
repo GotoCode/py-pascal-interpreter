@@ -140,42 +140,51 @@ class Interpreter(object):
     def eval(self):
         '''
         Evaluate the given input expression
+        
+        WARNING: This code does *not* support mixing of plus/minus
+                 with multiply/divide operations
         '''
         self.curr_token = self.get_next_token()
         
-        # Check for pattern 'INTEGER PLUS INTEGER'
+        # accumulator value
+        acc = 0
         
-        # first int operand
-        first = self.curr_token.value
+        if self.curr_token.type == EOF:
+            self.error()
+        
+        # seed accumulator with first number in expression
+        acc = self.curr_token.value
         self.consume(INTEGER)
         
-        # plus/minus operator
-        op = self.curr_token
+        while self.curr_token.type != EOF:
         
-        if op.type == PLUS:
-            self.consume(PLUS)
-        elif op.type == MINUS:
-            self.consume(MINUS)
-        elif op.type == MULTIPLY:
-            self.consume(MULTIPLY)
-        else:
-            self.consume(DIVIDE)
+            # plus/minus operator
+            op = self.curr_token
+            
+            if op.type == PLUS:
+                self.consume(PLUS)
+            elif op.type == MINUS:
+                self.consume(MINUS)
+            elif op.type == MULTIPLY:
+                self.consume(MULTIPLY)
+            else:
+                self.consume(DIVIDE)
+            
+            # second int operand
+            second = self.curr_token.value
+            self.consume(INTEGER)
         
-        # second int operand
-        second = self.curr_token.value
-        self.consume(INTEGER)
+            # based on pattern return appropriate result
+            if op.type == PLUS:
+                acc += second
+            elif op.type == MINUS:
+                acc -= second
+            elif op.type == MULTIPLY: # warning: may return incorrect result
+                acc *= second
+            else:                     # warning: may return incorrect result
+                acc /= second
         
-        # based on pattern return appropriate result
-        if op.type == PLUS:
-            out_val = first + second
-        elif op.type == MINUS:
-            out_val = first - second
-        elif op.type == MULTIPLY:
-            out_val = first * second
-        else:
-            out_val = first / second
-        
-        return out_val
+        return acc
     
     
     def remove_whitespace(self):
