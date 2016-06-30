@@ -15,6 +15,7 @@ INTEGER  = 'INTEGER'
 PLUS     = 'PLUS'
 MINUS    = 'MINUS'
 MULTIPLY = 'MULTIPLY'
+DIVIDE   = 'DIVIDE'
 EOF      = 'EOF'
 
 
@@ -114,6 +115,11 @@ class Interpreter(object):
                 
                 self.advance()
                 return Token(MULTIPLY, '*')
+            
+            elif self.curr_char == '/':
+                
+                self.advance()
+                return Token(DIVIDE, '/')
                 
             else:
                 self.error()
@@ -150,8 +156,10 @@ class Interpreter(object):
             self.consume(PLUS)
         elif op.type == MINUS:
             self.consume(MINUS)
-        else:
+        elif op.type == MULTIPLY:
             self.consume(MULTIPLY)
+        else:
+            self.consume(DIVIDE)
         
         # second int operand
         second = self.curr_token.value
@@ -162,8 +170,10 @@ class Interpreter(object):
             out_val = first + second
         elif op.type == MINUS:
             out_val = first - second
-        else:
+        elif op.type == MULTIPLY:
             out_val = first * second
+        else:
+            out_val = first / second
         
         return out_val
     
