@@ -149,12 +149,14 @@ class Interpreter(object):
     def eval(self):
         '''
         Evaluate the given input expression
+        
+        WARNING: Does not support mixing of plus/minus with multiply/divide
         '''
         self.curr_token = self.get_next_token()
         
         result = self.term()
         
-        while self.curr_token.type in (PLUS, MINUS):
+        while self.curr_token.type in (PLUS, MINUS, MULTIPLY, DIVIDE):
         
             token = self.curr_token
             
@@ -164,6 +166,12 @@ class Interpreter(object):
             elif token.type == MINUS:
                 self.consume(MINUS)
                 result = result - self.term()
+            elif token.type == MULTIPLY:
+                self.consume(MULTIPLY)
+                result = result * self.term()
+            else:
+                self.consume(DIVIDE)
+                result = result / self.term()
         
         return result
     
