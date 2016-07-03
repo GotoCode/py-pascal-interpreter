@@ -1,5 +1,7 @@
 
-
+'''
+An interpreter which handles operator precedence
+'''
 
 EOF     = 'EOF'
 INTEGER = 'N'
@@ -58,28 +60,41 @@ class Interpreter(object):
         while self.curr_char is not None:
             
             if self.curr_char.isspace():
+            
                 self.skip_whitespace()
                 continue
+                
             elif self.curr_char.isdigit():
+            
                 self.curr_token = Token(INTEGER, self.integer())
                 return self.curr_token
+                
             elif self.curr_char == '+':
+            
                 self.curr_token = Token(PLUS, '+')
                 self.advance()
                 return self.curr_token
+                
             elif self.curr_char == '-':
+            
                 self.curr_token = Token(MINUS, '-')
                 self.advance()
                 return self.curr_token
+                
             elif self.curr_char == '*':
+            
                 self.curr_token = Token(TIMES, '*')
                 self.advance()
                 return self.curr_token
+                
             elif self.curr_char == '/':
+            
                 self.curr_token = Token(DIVIDE, '/')
                 self.advance()
                 return self.curr_token
+                
             else:
+            
                 raise Exception('Error')
         
         self.curr_token = Token(EOF, None)
@@ -137,11 +152,18 @@ class Interpreter(object):
 
 def main():
 
-    while True:
+    try:
+    
+        while True:
         
-        input_str = raw_input('calc> ')
-        result    = Interpreter(input_str).expr()
-        print result
+            input_str = raw_input('calc> ')
+            if input_str == '': continue
+            result    = Interpreter(input_str).expr()
+            print result
+    
+    except EOFError:
+        
+        print 'Goodbye!\n'
 
 
 if __name__ == '__main__':
