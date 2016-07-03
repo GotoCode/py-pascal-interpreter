@@ -17,6 +17,8 @@ INTEGER = 'INTEGER'
 EOF     = 'EOF'
 PLUS    = 'PLUS'
 MINUS   = 'MINUS'
+TIMES   = 'TIMES'
+DIVIDE  = 'DIVIDE'
 
 
 ### Token - {type:t, value:v} ###
@@ -44,9 +46,17 @@ def make_integer(text, pos):
         pos += 1
     return (pos, result)
 
+def consume(lexer, type):
+
+    curr_token = lexer.next()
+    if curr_token.type != EOF and curr_token.type == type:
+        return curr_token.value
+    else:
+        raise Exception('Syntax error...')
+
 def make_lexer(text):
     
-    pos       = 0
+    pos = 0
     
     # return appropriate token based on current_char
     while pos < len(text):
@@ -70,6 +80,14 @@ def make_lexer(text):
             pos += 1
             yield make_token(PLUS, '+')
         
+        elif curr_char == '*':
+            pos += 1
+            yield make_token(TIMES, '*')
+        
+        elif curr_char == '/':
+            pos += 1
+            yield make_token(DIVIDE, '/')
+        
         else:
             raise Exception('Unrecognized char at index: %d' % pos)
     
@@ -80,39 +98,48 @@ def make_lexer(text):
 
 ### PARSER / INTERPRETER CODE ###
 
-def eval(text):
+def expr(lexer):
+    # expr : term ((+/-) term)*
     
-    lexer = make_lexer(text)
+    result = term(lexer)
     
-    curr_token = lexer.next()
+    op = lexer.next()
     
-    if curr_token['type'] != INTEGER:
-        raise Exception('Syntax Error')
-    
-    result = curr_token['value']
-    
-    curr_token = lexer.next()
-    
-    while curr_token['type'] != EOF:
-        
-        if curr_token['type'] == PLUS:
-            result += lexer.next()['value']
-        else:
-            result -= lexer.next()['value']
-        
-        curr_token = lexer.next()
+    while op.type in (PLUS, MINUS):
+        if   op.value == '+':
+            result += term(lexer)
+        elif op.value == '-':
+            result -= term(lexer)
     
     return result
 
+def term(lexer):
+    # term : factor ((TIMES/DIVIDE) factor)*
+    
+    result = factor(lexer)
+    
+    op = lexer.next()
+    
+    while op.type in (TIMES, DIVIDE):
+        if op.value == '*':
+            result *= factor(lexer)
+        elif op.value == '/':
+            result /= factor(lexer)
+    
+    return result
+
+def factor(lexer):
+
+    return consume(lexer, INTEGER)
+
 
 def main():
-    #try:
+
     while True:
         input_str = raw_input('calc> ')
-        result = eval(input_str)
+        lexer     = make_lexer(input_str)
+        result    = expr(lexer)
         print result
-    #except:
-    #    print 'Goodbye!\n'
 
 
 if __name__ == '__main__':
