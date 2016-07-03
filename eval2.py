@@ -1,147 +1,148 @@
-'''
-A simple interpreter for addition and subtraction
-
-Inspired by tutorial from Ruslan Spivak
-
-Author: GotoCode
-'''
-
-# input string --> lexer  --> token stream
-# token stream --> parser --> *recognition*
-# *after recognition* --> interpreter --> value
 
 
-### Token types ###
 
-INTEGER = 'INTEGER'
 EOF     = 'EOF'
-PLUS    = 'PLUS'
-MINUS   = 'MINUS'
-TIMES   = 'TIMES'
-DIVIDE  = 'DIVIDE'
+INTEGER = 'N'
+PLUS    = '+'
+MINUS   = '-'
+TIMES   = '*'
+DIVIDE  = '/'
 
 
-### Token - {type:t, value:v} ###
-
-def make_token(type, value):
-
-    return {'type' : type, 
-            'value': value}
-
-
-### LEXER CODE ###
-
-def skip_whitespace(text, pos):
+class Token(object):
     
-    while pos < len(text) and text[pos].isspace():
-        pos += 1
+    def __init__(self, type, value):
+        self.type  = type
+        self.value = value
     
-    return pos
+    def __str__(self):
+        return 'Token({type}, {value})'.format(type=self.type, value=self.value)
 
-def make_integer(text, pos):
+
+class Interpreter(object):
     
-    result = ''
-    while pos < len(text) and text[pos].isdigit():
-        result += text[pos]
-        pos += 1
-    return (pos, result)
-
-def consume(lexer, type):
-
-    curr_token = lexer.next()
-    if curr_token.type != EOF and curr_token.type == type:
-        return curr_token.value
-    else:
-        raise Exception('Syntax error...')
-
-def make_lexer(text):
+    def __init__(self, text):
+        self.text       = text
+        self.pos        = 0
+        self.curr_char  = self.text[self.pos]
+        self.curr_token = self.get_next_token()
     
-    pos = 0
-    
-    # return appropriate token based on current_char
-    while pos < len(text):
-        
-        curr_char = text[pos]
-        
-        if curr_char.isspace():
-        
-            pos = skip_whitespace(text, pos)
-            
-        elif curr_char.isdigit():
-            
-            (pos, int_string) = make_integer(text, pos)
-            yield make_token(INTEGER, int(int_string))
-        
-        elif curr_char == '-':
-            pos += 1
-            yield make_token(MINUS, '-')
-        
-        elif curr_char == '+':
-            pos += 1
-            yield make_token(PLUS, '+')
-        
-        elif curr_char == '*':
-            pos += 1
-            yield make_token(TIMES, '*')
-        
-        elif curr_char == '/':
-            pos += 1
-            yield make_token(DIVIDE, '/')
-        
+    def advance(self):
+        self.pos += 1
+        if self.pos >= len(self.text):
+            self.curr_char = None
         else:
-            raise Exception('Unrecognized char at index: %d' % pos)
+            self.curr_char = self.text[self.pos]
     
-    # once out of bounds, any further calls yield EOF token
-    while True:
-        yield make_token(EOF, None)
-
-
-### PARSER / INTERPRETER CODE ###
-
-def expr(lexer):
-    # expr : term ((+/-) term)*
+    def consume(self, type):
+        if self.curr_token.type == type:
+            self.curr_token = self.get_next_token()
+        else:
+            raise Exception('Syntax error...')
     
-    result = term(lexer)
+    def skip_whitespace(self):
+        
+        while self.pos < len(self.text) and self.curr_char.isspace():
+            self.advance()
     
-    op = lexer.next()
+    def integer(self):
+        
+        result = ''
+        while self.pos < len(self.text) and self.curr_char.isdigit():
+            result += self.curr_char
+            self.advance()
+        return int(result)
     
-    while op.type in (PLUS, MINUS):
-        if   op.value == '+':
-            result += term(lexer)
-        elif op.value == '-':
-            result -= term(lexer)
+    def get_next_token(self):
+        
+        while self.curr_char is not None:
+            
+            if self.curr_char.isspace():
+                self.skip_whitespace()
+                continue
+            elif self.curr_char.isdigit():
+                self.curr_token = Token(INTEGER, self.integer())
+                return self.curr_token
+            elif self.curr_char == '+':
+                self.curr_token = Token(PLUS, '+')
+                self.advance()
+                return self.curr_token
+            elif self.curr_char == '-':
+                self.curr_token = Token(MINUS, '-')
+                self.advance()
+                return self.curr_token
+            elif self.curr_char == '*':
+                self.curr_token = Token(TIMES, '*')
+                self.advance()
+                return self.curr_token
+            elif self.curr_char == '/':
+                self.curr_token = Token(DIVIDE, '/')
+                self.advance()
+                return self.curr_token
+            else:
+                raise Exception('Error')
+        
+        self.curr_token = Token(EOF, None)
+        return self.curr_token
     
-    return result
-
-def term(lexer):
-    # term : factor ((TIMES/DIVIDE) factor)*
+    # rule for +/-
+    def expr(self):
+        # expr : term ((+/-) term)*
+        result = self.term()
+        
+        #print self.pos
+        #print result
+        
+        #op = self.get_next_token()
+        
+        while self.curr_token.type in (PLUS, MINUS):
+            
+            op = self.curr_token
+            
+            if op.type == PLUS:
+                self.consume(PLUS)
+                result += self.term()
+            elif op.type == MINUS:
+                self.consume(MINUS)
+                result -= self.term()
+            
+        return result
     
-    result = factor(lexer)
+    # rule for TIMES/DIVIDE
+    def term(self):
+        # term : factor ((TIMES/DIVIDE) factor)*
+        result = self.factor()
+        
+        #op = self.get_next_token()
+        
+        while self.curr_token.type in (TIMES, DIVIDE):
+            
+            op = self.curr_token
+            
+            if op.type == TIMES:
+                self.consume(TIMES)
+                result *= self.factor()
+            elif op.type == DIVIDE:
+                self.consume(DIVIDE)
+                result /= self.factor()
+        
+        return result
     
-    op = lexer.next()
-    
-    while op.type in (TIMES, DIVIDE):
-        if op.value == '*':
-            result *= factor(lexer)
-        elif op.value == '/':
-            result /= factor(lexer)
-    
-    return result
-
-def factor(lexer):
-
-    return consume(lexer, INTEGER)
+    # rule for base integer
+    def factor(self):
+        curr_token = self.curr_token
+        self.consume(INTEGER)
+        return curr_token.value
 
 
 def main():
 
     while True:
+        
         input_str = raw_input('calc> ')
-        lexer     = make_lexer(input_str)
-        result    = expr(lexer)
+        result    = Interpreter(input_str).expr()
         print result
 
 
 if __name__ == '__main__':
     main()
-
