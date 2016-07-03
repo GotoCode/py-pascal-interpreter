@@ -9,6 +9,8 @@ PLUS    = '+'
 MINUS   = '-'
 TIMES   = '*'
 DIVIDE  = '/'
+LPAREN  = '('
+RPAREN  = ')'
 
 
 class Token(object):
@@ -40,7 +42,7 @@ class Interpreter(object):
         if self.curr_token.type == type:
             self.curr_token = self.get_next_token()
         else:
-            raise Exception('Syntax error...')
+            raise Exception('Syntax error... %s', self.curr_token.type)
     
     def skip_whitespace(self):
         
@@ -92,23 +94,64 @@ class Interpreter(object):
                 self.curr_token = Token(DIVIDE, '/')
                 self.advance()
                 return self.curr_token
+            
+            elif self.curr_char == '(':
+            
+                self.curr_token = Token(LPAREN, '(')
+                self.advance()
+                return self.curr_token
+
+            elif self.curr_char == ')':
+            
+                self.curr_token = Token(RPAREN, ')')
+                self.advance()
+                return self.curr_token
                 
             else:
             
                 raise Exception('Error')
         
         self.curr_token = Token(EOF, None)
-        return self.curr_token
+        return self.curr_token 
     
+    # rule for grouping with parentheses
+    def group(self):
+        # group : (LPAREN group RPAREN) ((+/-/TIMES/DIVIDE) group)*
+        
+        result = 0
+        
+        # handles the very first group
+        
+        if self.curr_token.type == LPAREN:
+            self.consume(LPAREN)
+            result = self.group()
+            self.consume(RPAREN)
+        else:
+            result = self.expr()
+        
+        while self.curr_token.type in (PLUS, MINUS, TIMES, DIVIDE):
+            
+            op = self.curr_token
+            
+            if op.type == TIMES:
+                self.consume(TIMES)
+                result *= self.group()
+            elif op.type == DIVIDE:
+                self.consume(DIVIDE)
+                result /= self.group()
+            elif op.type == MINUS:
+                self.consume(MINUS)
+                result -= self.group()
+            elif op.type == PLUS:
+                self.consume(PLUS)
+                result += self.group()
+        
+        return result
+
     # rule for +/-
     def expr(self):
         # expr : term ((+/-) term)*
         result = self.term()
-        
-        #print self.pos
-        #print result
-        
-        #op = self.get_next_token()
         
         while self.curr_token.type in (PLUS, MINUS):
             
@@ -116,19 +159,17 @@ class Interpreter(object):
             
             if op.type == PLUS:
                 self.consume(PLUS)
-                result += self.term()
+                result += self.group()
             elif op.type == MINUS:
                 self.consume(MINUS)
-                result -= self.term()
+                result -= self.group()
             
         return result
     
     # rule for TIMES/DIVIDE
     def term(self):
-        # term : factor ((TIMES/DIVIDE) factor)*
+        # term : group ((TIMES/DIVIDE) group)*
         result = self.factor()
-        
-        #op = self.get_next_token()
         
         while self.curr_token.type in (TIMES, DIVIDE):
             
@@ -136,13 +177,13 @@ class Interpreter(object):
             
             if op.type == TIMES:
                 self.consume(TIMES)
-                result *= self.factor()
+                result *= self.group()
             elif op.type == DIVIDE:
                 self.consume(DIVIDE)
-                result /= self.factor()
+                result /= self.group()
         
         return result
-    
+        
     # rule for base integer
     def factor(self):
         curr_token = self.curr_token
@@ -158,7 +199,7 @@ def main():
         
             input_str = raw_input('calc> ')
             if input_str == '': continue
-            result    = Interpreter(input_str).expr()
+            result    = Interpreter(input_str).group()
             print result
     
     except EOFError:
