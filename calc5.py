@@ -86,7 +86,7 @@ def eval_AST(ast):
         raise Exception("Invalid AST for input expression")
     else:
         if isinstance(ast, BinOp):
-            handle_binop(ast)
+            return handle_binop(ast)
         elif isinstance(ast, IntNode):
             return ast.value
 
@@ -179,6 +179,16 @@ class Interpreter(object):
                 
                 self.advance()
                 return Token(DIVIDE, '/')
+            
+            elif self.curr_char == '(':
+                
+                self.advance()
+                return Token(LPAREN, '(')
+            
+            elif self.curr_char == ')':
+                
+                self.advance()
+                return Token(RPAREN, ')')
                 
             else:
                 self.error()
@@ -227,9 +237,9 @@ class Interpreter(object):
             op = self.curr_token
             
             if self.curr_token.type == MULTIPLY:
-                self.consume(PLUS)
+                self.consume(MULTIPLY)
             elif self.curr_token.type == DIVIDE:
-                self.consume(MINUS)
+                self.consume(DIVIDE)
             
             node = BinOp(node, op, self.factor())
     
@@ -255,7 +265,7 @@ class Interpreter(object):
     def eval(self):
     
         ast = self.expr()
-        print ast
+        #print ast
         return eval_AST(ast)
     
 
