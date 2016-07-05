@@ -101,6 +101,27 @@ def handle_binop_rpn(binop_node):
     else:
         raise Exception("Unknown operator found")
 
+def handle_binop_lisp(binop_node):
+    
+    left_val  = get_rpn(binop_node.left)
+    right_val = get_rpn(binop_node.right)
+    
+    op_type = binop_node.op.type
+    
+    #print binop_node.op
+    
+    if op_type == PLUS:
+        return '(' + '+ ' + left_val + ' ' + right_val + ')'
+    elif op_type == MINUS:
+        return '(' + '- ' + left_val + ' ' + right_val + ')'
+    elif op_type == MULTIPLY:
+        return '(' + '* ' + left_val + ' ' + right_val + ')'
+    elif op_type == DIVIDE:
+        return '(' + '/ ' + left_val + ' ' + right_val + ')'
+    else:
+        raise Exception("Unknown operator found")
+
+
 
 # good ol' fashioned evaluation of arithmetic expression
 def eval_AST(ast):
@@ -117,7 +138,7 @@ def get_rpn(ast):
         raise Exception("Invalid AST for input expression")
     else:
         if isinstance(ast, BinOp):
-            return handle_binop_rpn(ast)
+            return handle_binop_lisp(ast)
         elif isinstance(ast, IntNode):
             return str(ast.value)
 
