@@ -81,6 +81,28 @@ def handle_binop(binop_node):
     else:
         raise Exception("Unknown operator found")
 
+def handle_binop_rpn(binop_node):
+    
+    left_val  = get_rpn(binop_node.left)
+    right_val = get_rpn(binop_node.right)
+    
+    op_type = binop_node.op.type
+    
+    #print binop_node.op
+    
+    if op_type == PLUS:
+        return left_val + ' ' + right_val + ' + '
+    elif op_type == MINUS:
+        return left_val + ' ' + right_val + ' - '
+    elif op_type == MULTIPLY:
+        return left_val + ' ' + right_val + ' * '
+    elif op_type == DIVIDE:
+        return left_val + ' ' + right_val + ' / '
+    else:
+        raise Exception("Unknown operator found")
+
+
+# good ol' fashioned evaluation of arithmetic expression
 def eval_AST(ast):
     if ast is None:
         raise Exception("Invalid AST for input expression")
@@ -89,6 +111,15 @@ def eval_AST(ast):
             return handle_binop(ast)
         elif isinstance(ast, IntNode):
             return ast.value
+
+def get_rpn(ast):
+    if ast is None:
+        raise Exception("Invalid AST for input expression")
+    else:
+        if isinstance(ast, BinOp):
+            return handle_binop_rpn(ast)
+        elif isinstance(ast, IntNode):
+            return str(ast.value)
 
 
 # An Interpreter which converts a single-line
@@ -266,7 +297,8 @@ class Interpreter(object):
     
         ast = self.expr()
         #print ast
-        return eval_AST(ast)
+        #return eval_AST(ast)
+        return get_rpn(ast)
     
 
 def main():
