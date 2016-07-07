@@ -22,6 +22,14 @@ LPAREN   = 'LPAREN'
 RPAREN   = 'RPAREN'
 EOF      = 'EOF'
 
+# Pascal token types
+
+BEGIN  = 'BEGIN'
+END    = 'END'
+ASSIGN = 'ASSIGN'
+ID     = 'ID'
+DOT    = 'DOT'
+SEMI   = 'SEMI'
 
 # A Token is a pair - (type, value)
 
@@ -66,6 +74,24 @@ class UnaryOp(object):
     
     def __str__(self):
         return 'UnaryOp({op}, {expr})'.format(op=self.op.type, expr=str(self.expr))
+
+class CompoundNode(object):
+    def __init__(self):
+        self.children = []
+
+class Assign(object):
+    def __init__(self, left, op, right):
+        self.left = left
+        self.op = op
+        self.right = right
+
+class Var(object):
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+
+class NoOp(object):
+    pass
 
 
 # AST traversal functions (i.e. evaluation) #
@@ -168,6 +194,28 @@ class Interpreter(object):
     
     ### LEXER CODE ###
     
+    # look ahead at next char of input expression
+    def peek(self):
+    
+        next_pos = self.pos + 1
+        
+        if next_pos > len(self.text):
+            return None
+        else:
+            return self.text[next_pos]
+    
+    # create token for variables and reserved keywords
+    def _id(self):
+    
+        RESERVED_KEYWORDS = {'BEGIN':Token('BEGIN', 'BEGIN'),
+                             'END':Token('END', 'END')}
+        result = ''
+        
+        while self.curr_char != None and self.curr_char.isalnum():
+            result += self.curr_char
+            
+        return RESERVED_KEYWORDS.get(result, Token(ID, result))
+    
     def get_next_token(self):
         '''
         Lexical analyzer which returns a stream of
@@ -177,7 +225,27 @@ class Interpreter(object):
         '''
         while self.curr_char is not None:
             
-            if self.curr_char.isspace(): 
+            if self.curr_char.isalpha():
+                
+                return self._id()
+            
+            elif self.curr_char == ':' and self.peek() == '=':
+                
+                self.advance()
+                self.advance()
+                return Token(ASSIGN, ':=')
+            
+            elif self.curr_char == '.':
+                
+                self.advance()
+                return Token(DOT, '.')
+            
+            elif self.curr_char == ';':
+                
+                self.advance()
+                return Token(SEMI, ';')
+            
+            elif self.curr_char.isspace(): 
             
                 self.skip_whitespace()
                 continue
@@ -293,6 +361,57 @@ class Interpreter(object):
             self.consume(INTEGER)
         
         return node
+    
+    def program(self):
+        '''program : compound_statement DOT'''
+        node = self.compound_statement()
+        self.consume(DOT)
+        return node
+    
+    def compound_statement(self):
+        '''compound_statement : BEGIN statement_list END'''
+        self.consume(BEGIN)
+        node = self.statement_list()
+        self.consume(END)
+        return node
+    
+    def statement_list(self):
+        '''statement_list : statement | statement SEMI statement_list'''
+        s = self.statement()
+        
+        children = [s]
+        
+        while self.curr_token.type == SEMI:
+            self.consume(SEMI)
+            children.append(self.statement())
+        
+        node = CompoundNode()
+        node.children = children
+        
+        return node
+    
+    def statement(self):
+        '''statement : compound_statement | assignment_statement | empty'''
+        
+        node = None
+        
+        if self.curr_token.type == BEGIN:
+            node = self.compound_statement()
+        elif self.curr_token.type == ID:
+            node = self.assignment_statement()
+        else:
+            node = NoOp()
+        
+        return node
+    
+    def assignment_statement(self):
+        '''assignment_statement : variable ASSIGN expr'''
+        left  = self.variable()
+        token = self.curr_token
+        self.consume(ASSIGN)
+        right = self.expr()
+        
+        return Assign(left, token, right)
     
     # INTERPRETER CODE #
     
