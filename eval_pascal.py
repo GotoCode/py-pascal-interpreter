@@ -37,6 +37,7 @@ SEMI   = 'SEMI'
 
 GLOBAL_SCOPE = {}
 
+
 # A Token is a pair - (type, value)
 
 class Token(object):
@@ -154,9 +155,9 @@ def eval_AST(ast):
             pass
         elif isinstance(ast, Assign):
             var_name = ast.left.value
-            GLOBAL_SCOPE[var_name] = eval_AST(ast.right)
+            GLOBAL_SCOPE[var_name.lower()] = eval_AST(ast.right)
         elif isinstance(ast, Var):
-            value = GLOBAL_SCOPE.get(ast.value, None)
+            value = GLOBAL_SCOPE.get(ast.value.lower(), None)
             if value is None:
                 raise NameError(str(ast.value))
             else:
@@ -235,7 +236,7 @@ class Interpreter(object):
             result += self.curr_char
             self.advance()
             
-        return RESERVED_KEYWORDS.get(result, Token(ID, result))
+        return RESERVED_KEYWORDS.get(result.upper(), Token(ID, result.lower()))
     
     def get_next_token(self):
         '''
@@ -246,11 +247,7 @@ class Interpreter(object):
         '''
         while self.curr_char is not None:
             
-            if self.curr_char.isalpha():
-                
-                return self._id()
-            
-            elif self.curr_char == ':' and self.peek() == '=':
+            if self.curr_char == ':' and self.peek() == '=':
                 
                 self.advance()
                 self.advance()
@@ -290,8 +287,10 @@ class Interpreter(object):
                 self.advance()
                 return Token(MULTIPLY, '*')
             
-            elif self.curr_char == '/':
+            elif self.text[self.pos:self.pos+3] == 'div':
                 
+                self.advance()
+                self.advance()
                 self.advance()
                 return Token(DIVIDE, '/')
             
@@ -304,6 +303,10 @@ class Interpreter(object):
                 
                 self.advance()
                 return Token(RPAREN, ')')
+            
+            elif self.curr_char.isalpha():
+                
+                return self._id()
                 
             else:
                 self.error()
