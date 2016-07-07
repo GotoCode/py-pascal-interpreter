@@ -10,6 +10,8 @@ Inspired by tutorial from Ruslan Spivak
 Author: GotoCode
 '''
 
+import sys
+
 
 # Token Types
 
@@ -30,6 +32,10 @@ ASSIGN = 'ASSIGN'
 ID     = 'ID'
 DOT    = 'DOT'
 SEMI   = 'SEMI'
+
+# global symbol table
+
+GLOBAL_SCOPE = {}
 
 # A Token is a pair - (type, value)
 
@@ -141,6 +147,20 @@ def eval_AST(ast):
             return handle_unaryop(ast)
         elif isinstance(ast, IntNode):
             return ast.value
+        elif isinstance(ast, CompoundNode):
+            for child in ast.children:
+                eval_AST(child)
+        elif isinstance(ast, NoOp):
+            pass
+        elif isinstance(ast, Assign):
+            var_name = ast.left.value
+            GLOBAL_SCOPE[var_name] = eval_AST(ast.right)
+        elif isinstance(ast, Var):
+            value = GLOBAL_SCOPE.get(ast.value, None)
+            if value is None:
+                raise NameError(str(ast.value))
+            else:
+                return value
 
 
 # An Interpreter which converts a single-line
@@ -213,6 +233,7 @@ class Interpreter(object):
         
         while self.curr_char != None and self.curr_char.isalnum():
             result += self.curr_char
+            self.advance()
             
         return RESERVED_KEYWORDS.get(result, Token(ID, result))
     
@@ -355,6 +376,8 @@ class Interpreter(object):
         elif self.curr_token.type == MINUS:
             self.consume(MINUS)
             node = UnaryOp(Token(MINUS, 'MINUS'), self.factor())
+        elif self.curr_token.type == ID:
+            return self.variable()
         else:
             #self.consume(INTEGER)
             node = IntNode(self.curr_token)
@@ -370,6 +393,7 @@ class Interpreter(object):
     
     def compound_statement(self):
         '''compound_statement : BEGIN statement_list END'''
+        #print self.curr_token
         self.consume(BEGIN)
         node = self.statement_list()
         self.consume(END)
@@ -407,40 +431,58 @@ class Interpreter(object):
     def assignment_statement(self):
         '''assignment_statement : variable ASSIGN expr'''
         left  = self.variable()
+        #print 'left:', left.value
         token = self.curr_token
+        #print 'token:', self.curr_token
         self.consume(ASSIGN)
         right = self.expr()
         
         return Assign(left, token, right)
     
+    def variable(self):
+        '''variable : ID'''
+        node = Var(self.curr_token)
+        self.consume(ID)
+        return node
+    
+    def empty(self):
+        return NoOp()
+    
     # INTERPRETER CODE #
     
     def eval(self):
     
-        ast = self.expr()
-        return eval_AST(ast)
+        ast = self.program()
+        eval_AST(ast)
     
+
+def file_to_input(filename):
+    
+    fp = open(filename, 'r')
+    out_text = ''
+    
+    for line in fp:
+        out_text += line.strip() + ' '
+    
+    return out_text
+
 
 def main():
     '''
     Main logic for presenting CLI to user of interpreter
     '''
-    while True:
-
-        try:
-            input_expr = raw_input('calc> ')
-        except EOFError:
-            print
-            break
+    
+    GLOBAL_SCOPE.clear()
+    
+    input_expr  = file_to_input(sys.argv[1])
+    
+    #input_expr = 'BEGIN x := 2; y := (x + 2) * 3 END.'
         
-        # ignore any empty lines of input
-        if not input_expr:
-            continue
+    interpreter = Interpreter(input_expr)
         
-        interpreter = Interpreter(input_expr)
-        result = interpreter.eval()
-        
-        print result
+    interpreter.eval()
+    
+    print GLOBAL_SCOPE
 
 
 if __name__ == '__main__':
