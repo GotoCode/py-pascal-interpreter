@@ -232,7 +232,7 @@ class Interpreter(object):
                              'END':Token('END', 'END')}
         result = ''
         
-        while self.curr_char != None and self.curr_char.isalnum():
+        while self.curr_char != None and self.curr_char.isalnum() or self.curr_char == '_':
             result += self.curr_char
             self.advance()
             
@@ -304,7 +304,7 @@ class Interpreter(object):
                 self.advance()
                 return Token(RPAREN, ')')
             
-            elif self.curr_char.isalpha():
+            elif self.curr_char.isalpha() or self.curr_char == '_':
                 
                 return self._id()
                 
